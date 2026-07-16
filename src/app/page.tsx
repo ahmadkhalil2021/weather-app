@@ -46,13 +46,26 @@ export default function Home() {
     );
   if (error) return <div>{t("errorLoading")}</div>;
 
-  const firstDate = new Date(data?.list[0].dt_txt);
+  // Defensive guard: if the API returned an error payload (e.g. 401 from a
+  // missing `NEXT_PUBLIC_API_KEY` on Vercel) or an empty `list`, show the
+  // localized error message instead of crashing on `data.list[0]`.
+  if (!data?.list?.length) {
+    return (
+      <div className="flex items-center min-h-screen justify-center px-4 text-center">
+        <p className="text-red-600 dark:text-red-400 max-w-md">
+          {t("errorLoading")}
+        </p>
+      </div>
+    );
+  }
+
+  const firstDate = new Date(data.list[0].dt_txt);
   const firstData = data?.list[0];
   const dateLocale = locale === "de" ? de : enUS;
 
   const uniqueDates = Array.from(
     new Set(
-      data?.list.map(
+      data.list.map(
         (entry: { dt: number }) =>
           new Date(entry.dt * 1000).toISOString().split("T")[0]
       )
@@ -60,7 +73,7 @@ export default function Home() {
   );
 
   const firstDataForEachDate = uniqueDates.map((date) => {
-    return data?.list.find((entry: { dt: number }) => {
+    return data.list.find((entry: { dt: number }) => {
       const entryDate = new Date(entry.dt * 1000).toISOString().split("T")[0];
       const entryTime = new Date(entry.dt * 1000).getHours();
       return entryDate === date && entryTime >= 0;
