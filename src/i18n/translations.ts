@@ -29,6 +29,10 @@ export const translations = {
     locationNotFound: "Location not found.",
     errorLoading: "Error loading data",
     loading: "Loading...",
+    favorites: "Favorites",
+    recent: "Recent",
+    addToFavorites: "Add to favorites",
+    removeFromFavorites: "Remove from favorites",
   },
   de: {
     appName: "Wetter",
@@ -60,6 +64,10 @@ export const translations = {
     locationNotFound: "Standort nicht gefunden.",
     errorLoading: "Fehler beim Laden der Daten",
     loading: "Wird geladen...",
+    favorites: "Favoriten",
+    recent: "Zuletzt",
+    addToFavorites: "Zu Favoriten hinzufügen",
+    removeFromFavorites: "Aus Favoriten entfernen",
   },
 } as const;
 

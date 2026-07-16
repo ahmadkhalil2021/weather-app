@@ -6,16 +6,20 @@ import {
   MdWbSunny,
   MdMenu,
   MdClose,
+  MdStar,
+  MdStarBorder,
 } from "react-icons/md";
 import { ThemeToggle } from "./ThemeToggle";
 import { UnitToggle } from "./UnitToggle";
 import { LocaleToggle } from "./LocaleToggle";
 import { SearchBox } from "./SearchBox";
+import { FavoritesChips } from "./FavoritesChips";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAtom } from "jotai";
 import { placeAtom } from "../app/atom";
 import { useTranslation } from "../hooks/useTranslation";
+import { useFavorites, useRecents } from "../hooks/useCityLists";
 
 export default function Navbar() {
   const [city, setCity] = useState("");
@@ -26,6 +30,8 @@ export default function Navbar() {
   const [, setPlace] = useAtom(placeAtom);
   const [menuOpen, setMenuOpen] = useState(false);
   const { t } = useTranslation();
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const { pushRecent } = useRecents();
 
   // Escape key + body scroll lock while the mobile menu is open.
   useEffect(() => {
@@ -64,9 +70,13 @@ export default function Navbar() {
   }
 
   function handSuggestionClick(value: string) {
+    // Selecting a suggestion means the user committed to that city — treat
+    // it as a place change so recents update and the mobile drawer closes.
     setCity(value);
     setShowSuggestions(false);
-    setMenuOpen(false); // close mobile menu after picking a city
+    setPlace(value);
+    pushRecent(value);
+    setMenuOpen(false);
   }
 
   function handleOnSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -77,6 +87,7 @@ export default function Navbar() {
       setError("");
       setShowSuggestions(false);
       setPlace(city);
+      pushRecent(city);
       setCity("");
       setMenuOpen(false); // close mobile menu after submit
     }
@@ -91,7 +102,9 @@ export default function Navbar() {
             `https://api.openweathermap.org/data/2.5/weather?lat=${latitude}&lon=${longitude}&appid=${process.env.NEXT_PUBLIC_API_KEY}`
           )
           .then((res) => {
-            setPlace(res.data.name);
+            const name = res.data.name;
+            setPlace(name);
+            pushRecent(name);
             setMenuOpen(false); // close after picking current location
           })
           .catch((err) => {
@@ -134,6 +147,17 @@ export default function Navbar() {
       <span className="text-sm font-medium text-slate-900 dark:text-gray-200 whitespace-nowrap">
         {place}
       </span>
+      <button
+        type="button"
+        onClick={() => toggleFavorite(place)}
+        aria-label={
+          isFavorite(place) ? t("removeFromFavorites") : t("addToFavorites")
+        }
+        aria-pressed={isFavorite(place)}
+        className="text-xl text-yellow-500 hover:scale-110 active:scale-95 transition-transform focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 rounded"
+      >
+        {isFavorite(place) ? <MdStar /> : <MdStarBorder />}
+      </button>
     </div>
   );
 
@@ -181,6 +205,11 @@ export default function Navbar() {
             </button>
           </div>
         </div>
+
+        {/* DESKTOP: favorites + recents sub-row (hidden on mobile, drawer has its own copy) */}
+        <div className="hidden md:block border-t border-white/10 dark:border-white/5">
+          <FavoritesChips />
+        </div>
       </nav>
 
       {/* MOBILE: backdrop */}
@@ -215,6 +244,9 @@ export default function Navbar() {
 
         <div className="flex flex-col gap-6 overflow-y-auto">
           {SearchSection}
+
+          {/* MOBILE: favorites + recents chips inside the drawer */}
+          <FavoritesChips onPlaceChange={() => setMenuOpen(false)} />
 
           <hr className="border-gray-200 dark:border-gray-800" />
 
